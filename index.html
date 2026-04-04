@@ -210,7 +210,7 @@ function norm(row){
   const o={};
   for(const k in row){
     const nk=k.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
-    o[nk]=(row[k]?.trim?row[k].trim():row[k])||'';
+    o[nk]=(row[k]&&row[k].trim)?row[k].trim():row[k]||'';
   }
   return o;
 }
@@ -246,7 +246,7 @@ async function loadAll(){
     ss('Updated '+new Date().toLocaleTimeString()+' · '+D.weight.length+' weight, '+D.calories.length+' cal, '+D.activity.length+' activity, '+D.challenges.length+' challenge entries');
     renderAll();
   }catch(e){
-    ss('Error loading data: '+e.message+'. Check the browser console for details.');
+    ss('Error: '+e.message);
     console.error(e);
   }
 }
@@ -308,7 +308,7 @@ function renderWeight(){
   if(bfR.length)mk('bf-chart',{type:'line',data:{labels:bfR.map(r=>r.date.slice(5)),datasets:[{label:'Fat %',data:bfR.map(r=>r.fatPct),borderColor:'#534AB7',pointRadius:3,tension:0.3,yAxisID:'y'},{label:'Fat lbs',data:bfR.map(r=>r.fatLbs),borderColor:'#D85A30',pointRadius:3,tension:0.3,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{grid:{color:GC},position:'left',ticks:{color:TC,font:{size:11},callback:v=>v+'%'}},y2:{grid:{display:false},position:'right',ticks:{color:TC,font:{size:11},callback:v=>v+' lbs'}}}}});
   document.getElementById('w-tbl').innerHTML=D.weight.slice().reverse().map((r,i,arr)=>{
     const p=arr[i+1],d=p?+(r.w-p.w).toFixed(1):null;
-    return `<tr><td>${r.date}</td><td>${r.w} lbs</td><td><span class="badge ${d===null?'':d<0?'bs':d>0?'bd':'bw'}">${d===null?'—':(d>0?'+':'')+d+' lbs'}</span></td><td>${r.fatLbs!==null?r.fatLbs+' lbs':'—'}</td><td>${r.fatPct!==null?r.fatPct+'%':'—'}</td><td><span class="badge ${r.w<SW?'bs':'bw'}">${r.w<SW?'losing':'monitor'}</span></td></tr>`;
+    return '<tr><td>'+r.date+'</td><td>'+r.w+' lbs</td><td><span class="badge '+(d===null?'':d<0?'bs':d>0?'bd':'bw')+'">'+(d===null?'—':(d>0?'+':'')+d+' lbs')+'</span></td><td>'+(r.fatLbs!==null?r.fatLbs+' lbs':'—')+'</td><td>'+(r.fatPct!==null?r.fatPct+'%':'—')+'</td><td><span class="badge '+(r.w<SW?'bs':'bw')+'">'+(r.w<SW?'losing':'monitor')+'</span></td></tr>';
   }).join('');
 }
 
@@ -320,7 +320,7 @@ function renderCalories(){
   document.getElementById('c-out').textContent=ao.toLocaleString();
   document.getElementById('c-def').textContent=(ao-ai>=0?'+':'')+(ao-ai);
   mk('c-chart',{type:'bar',data:{labels:D.calories.map(r=>r.date.slice(5)),datasets:[{label:'Consumed',data:D.calories.map(r=>r.c),backgroundColor:'rgba(55,138,221,0.75)',borderRadius:3},{label:'Burned',data:D.calories.map(r=>r.b),backgroundColor:'rgba(29,158,117,0.75)',borderRadius:3}]},options:bO({scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{grid:{color:GC},ticks:{color:TC,font:{size:11},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':v}}}})});
-  document.getElementById('c-tbl').innerHTML=D.calories.slice().reverse().map(r=>{const d=r.b-r.c;return `<tr><td>${r.date}</td><td>${r.c.toLocaleString()}</td><td>${r.b.toLocaleString()}</td><td><span class="badge ${d>=400?'bs':d>=0?'bw':'bd'}">${d>=0?'+':''}${d}</span></td></tr>`;}).join('');
+  document.getElementById('c-tbl').innerHTML=D.calories.slice().reverse().map(r=>{const d=r.b-r.c;return '<tr><td>'+r.date+'</td><td>'+r.c.toLocaleString()+'</td><td>'+r.b.toLocaleString()+'</td><td><span class="badge '+(d>=400?'bs':d>=0?'bw':'bd')+'">'+(d>=0?'+':'')+d+'</span></td></tr>';}).join('');
 }
 
 function renderActivity(){
@@ -333,8 +333,8 @@ function renderActivity(){
   const rd=D.activity.filter(r=>r.ruck>0);
   if(rd.length)mk('a-rc',{type:'bar',data:{labels:rd.map(r=>r.date.slice(5)),datasets:[{data:rd.map(r=>r.ruck),backgroundColor:'rgba(29,158,117,0.75)',borderRadius:3}]},options:bO()});
   if(sr.length)mk('a-sc',{type:'line',data:{labels:sr.map(r=>r.date.slice(5)),datasets:[{data:sr.map(r=>r.sleep),borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,0.07)',pointRadius:3,tension:0.3,fill:true},{data:sr.map(()=>8),borderColor:'rgba(99,153,34,0.4)',borderDash:[3,3],pointRadius:0}]},options:bO({scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{grid:{color:GC},min:4,max:10,ticks:{color:TC,font:{size:11}}}}})});
-  document.getElementById('a-str').innerHTML=D.activity.slice(-30).map(r=>`<div class="sd" style="background:${r.lifted?'#1D9E75':'var(--bg2)'}" title="${r.date}: ${r.lifted?'Lifted':'Rest'}"></div>`).join('');
-  document.getElementById('a-tbl').innerHTML=D.activity.slice().reverse().map(r=>`<tr><td>${r.date}</td><td>${r.ruck>0?r.ruck+' mi':'—'}</td><td><span class="badge ${r.lifted?'bs':'bw'}">${r.lifted?'Yes':'No'}</span></td><td>${r.sleep>0?r.sleep+' hrs':'—'}</td></tr>`).join('');
+  document.getElementById('a-str').innerHTML=D.activity.slice(-30).map(r=>'<div class="sd" style="background:'+(r.lifted?'#1D9E75':'var(--bg2)')+'" title="'+r.date+': '+(r.lifted?'Lifted':'Rest')+'"></div>').join('');
+  document.getElementById('a-tbl').innerHTML=D.activity.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+(r.ruck>0?r.ruck+' mi':'—')+'</td><td><span class="badge '+(r.lifted?'bs':'bw')+'">'+(r.lifted?'Yes':'No')+'</span></td><td>'+(r.sleep>0?r.sleep+' hrs':'—')+'</td></tr>').join('');
 }
 
 function renderChallenges(){
@@ -349,4 +349,9 @@ function renderChallenges(){
   const cols=['#1D9E75','#378ADD','#D85A30','#534AB7','#BA7517'];
   const names=Object.keys(bn);
   const allDates=[...new Set(D.challenges.map(r=>r.date.slice(5)))].sort();
-  mk('ch-chart',{type:'scatter',data:{datasets:names.map((n,i)=>({label:n,data:bn[n].map(r=>({x:r.date.slice(5),y:r.score})),borderColor:cols[i%5],backgroundColor:cols[i%5],pointRadius:5,showLine:true,tension:0.3}))},optio
+  mk('ch-chart',{type:'scatter',data:{datasets:names.map((n,i)=>({label:n,data:bn[n].map(r=>({x:r.date.slice(5),y:r.score})),borderColor:cols[i%5],backgroundColor:cols[i%5],pointRadius:5,showLine:true,tension:0.3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC,font:{size:11},boxWidth:10}}},scales:{x:{type:'category',labels:allDates,grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{grid:{color:GC},ticks:{color:TC,font:{size:11}}}}}});
+  document.getElementById('ch-tbl').innerHTML=D.challenges.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+r.name+'</td><td>'+(r.score||'—')+'</td><td style="color:var(--text2)">'+(r.notes||'—')+'</td></tr>').join('');
+}
+
+loadAll();
+</script>
