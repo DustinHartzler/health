@@ -59,7 +59,7 @@ td{padding:8px;border-bottom:0.5px solid var(--border);overflow:hidden;text-over
 <div class="hdr">
   <div>
     <div class="hdr-t">DMoney fitness tracker</div>
-    <div class="hdr-s">Goal: 220 → 205 lbs &nbsp;·&nbsp; Body fat: 30 → 15 lbs &nbsp;·&nbsp; June 9, 2025</div>
+    <div class="hdr-s">Goal: 220 → 205 lbs &nbsp;·&nbsp; Body fat: 30 → 20 lbs &nbsp;·&nbsp; June 9, 2025</div>
   </div>
   <button class="rbtn" onclick="loadAll()">Refresh data</button>
 </div>
@@ -86,7 +86,7 @@ td{padding:8px;border-bottom:0.5px solid var(--border);overflow:hidden;text-over
     <div class="bwrap"><div class="bb" id="ov-wbar" style="width:0%;background:var(--teal)"></div></div>
     <div style="margin-top:14px">
       <div class="ct" style="margin-bottom:4px">Body fat progress</div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>30 lbs fat</span><span id="ov-bfp">0%</span><span>15 lbs fat</span></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:4px"><span>30 lbs fat</span><span id="ov-bfp">0%</span><span>20 lbs fat</span></div>
       <div class="bwrap"><div class="bb" id="ov-bfbar" style="width:0%;background:var(--purple)"></div></div>
     </div>
     <div style="font-size:12px;color:var(--text2);margin-top:8px" id="ov-note">—</div>
@@ -296,7 +296,7 @@ function renderOverview(){
       document.getElementById('ov-bfs').textContent=lb.fatLbs+' lbs fat';
       const fl=+(SFL-lb.fatLbs).toFixed(1);
       document.getElementById('ov-fl').textContent=fl;
-      const bp=Math.min(100,Math.max(0,Math.round(fl/15*100)));
+      const bp=Math.min(100,Math.max(0,Math.round(fl/10*100)));
       document.getElementById('ov-bfp').textContent=bp+'%';
       document.getElementById('ov-bfbar').style.width=bp+'%';
     }
