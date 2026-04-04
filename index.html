@@ -206,12 +206,27 @@ async function fetchCSV(url){
   return Papa.parse(await r.text(),{header:true,skipEmptyLines:true}).data;
 }
 
+function parseDate(v){
+  if(!v)return '';
+  const s=String(v).trim();
+  // Already YYYY-MM-DD
+  if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;
+  // M/D/YYYY or MM/DD/YYYY
+  const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+  if(m)return m[3]+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0');
+  // Try native parse as fallback
+  const d=new Date(s);
+  if(!isNaN(d))return d.toISOString().split('T')[0];
+  return s;
+}
+
 function norm(row){
   const o={};
   for(const k in row){
     const nk=k.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,'');
     o[nk]=(row[k]&&row[k].trim)?row[k].trim():row[k]||'';
   }
+  if(o.date)o.date=parseDate(o.date);
   return o;
 }
 
