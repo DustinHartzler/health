@@ -70,6 +70,7 @@ td{padding:8px;border-bottom:0.5px solid var(--border);overflow:hidden;text-over
   <button class="nb" onclick="sp('weight')">Weight & body fat</button>
   <button class="nb" onclick="sp('calories')">Calories</button>
   <button class="nb" onclick="sp('activity')">Activity</button>
+  <button class="nb" onclick="sp('measurements')">Measurements</button>
   <button class="nb" onclick="sp('challenges')">Challenges & PRs</button>
 </div>
 
@@ -164,19 +165,55 @@ td{padding:8px;border-bottom:0.5px solid var(--border);overflow:hidden;text-over
   </div>
 </div>
 
+<div id="measurements" class="pg">
+  <div class="g3">
+    <div class="m"><div class="ml">Chest</div><div class="mv" id="ms-chest">—</div><div class="ms" id="ms-chestd"></div></div>
+    <div class="m"><div class="ml">Waist</div><div class="mv" id="ms-waist">—</div><div class="ms" id="ms-waistd"></div></div>
+    <div class="m"><div class="ml">Hips</div><div class="mv" id="ms-hips">—</div><div class="ms" id="ms-hipsd"></div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Measurement trends (inches)</div>
+    <div class="pw" style="height:280px"><canvas id="ms-chart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct">All measurements</div>
+    <div class="tw"><table><thead><tr><th style="width:25%">Date</th><th style="width:25%">Chest</th><th style="width:25%">Waist</th><th style="width:25%">Hips</th></tr></thead><tbody id="ms-tbl"></tbody></table></div>
+  </div>
+</div>
+
 <div id="challenges" class="pg">
   <div class="g3">
     <div class="m"><div class="ml">Total entries</div><div class="mv" id="ch-tot">—</div></div>
-    <div class="m"><div class="ml">Latest score</div><div class="mv" id="ch-lat">—</div><div class="ms" id="ch-lats"></div></div>
-    <div class="m"><div class="ml">Best improvement</div><div class="mv" id="ch-best">—</div></div>
+    <div class="m"><div class="ml">Weight PRs</div><div class="mv" id="ch-wcnt">—</div></div>
+    <div class="m"><div class="ml">Time PRs</div><div class="mv" id="ch-tcnt">—</div></div>
+  </div>
+
+  <h3 style="margin:1.2rem 0 0.5rem;color:var(--text1);font-size:1rem">Weight-Based Challenges</h3>
+  <div class="g3" style="margin-bottom:0.5rem">
+    <div class="m"><div class="ml">Latest PR</div><div class="mv" id="ch-wlat">—</div><div class="ms" id="ch-wlats"></div></div>
+    <div class="m"><div class="ml">Best improvement</div><div class="mv" id="ch-wbest">—</div></div>
   </div>
   <div class="card">
-    <div class="ct">Score history</div>
-    <div class="pw" style="height:240px"><canvas id="ch-chart"></canvas></div>
+    <div class="ct">Weight PR history</div>
+    <div class="pw" style="height:240px"><canvas id="ch-wchart"></canvas></div>
   </div>
   <div class="card">
-    <div class="ct">All PRs & scores</div>
-    <div class="tw"><table><thead><tr><th style="width:22%">Date</th><th style="width:32%">Name</th><th style="width:18%">Score</th><th style="width:28%">Notes</th></tr></thead><tbody id="ch-tbl"></tbody></table></div>
+    <div class="ct">Weight PRs & scores</div>
+    <div class="tw"><table><thead><tr><th style="width:22%">Date</th><th style="width:32%">Name</th><th style="width:18%">Weight</th><th style="width:28%">Notes</th></tr></thead><tbody id="ch-wtbl"></tbody></table></div>
+  </div>
+
+  <h3 style="margin:1.2rem 0 0.5rem;color:var(--text1);font-size:1rem">Time-Based Challenges</h3>
+  <div class="g3" style="margin-bottom:0.5rem">
+    <div class="m"><div class="ml">Latest PR</div><div class="mv" id="ch-tlat">—</div><div class="ms" id="ch-tlats"></div></div>
+    <div class="m"><div class="ml">Best improvement</div><div class="mv" id="ch-tbest">—</div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Time PR history</div>
+    <div class="pw" style="height:240px"><canvas id="ch-tchart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct">Time PRs & scores</div>
+    <div class="tw"><table><thead><tr><th style="width:22%">Date</th><th style="width:32%">Name</th><th style="width:18%">Time</th><th style="width:28%">Notes</th></tr></thead><tbody id="ch-ttbl"></tbody></table></div>
   </div>
 </div>
 
@@ -188,11 +225,12 @@ const URLS = {
   weight:     BASE + '0',
   calories:   BASE + '1245612249',
   activity:   BASE + '780168580',
+  measurements: BASE + '2074990521',
   challenges: BASE + '1121342237'
 };
 const SW=220,GW=205,SFL=30;
 const GD=new Date('2025-06-09');
-let D={weight:[],calories:[],activity:[],challenges:[]};
+let D={weight:[],calories:[],activity:[],measurements:[],challenges:[]};
 let CH={};
 const DARK=matchMedia('(prefers-color-scheme:dark)').matches;
 const TC=DARK?'#a8a8a2':'#888780';
@@ -233,10 +271,11 @@ function norm(row){
 async function loadAll(){
   ss('Fetching data...');
   try{
-    const[wR,cR,aR,chR]=await Promise.all([
+    const[wR,cR,aR,mR,chR]=await Promise.all([
       fetchCSV(URLS.weight),
       fetchCSV(URLS.calories),
       fetchCSV(URLS.activity),
+      fetchCSV(URLS.measurements),
       fetchCSV(URLS.challenges)
     ]);
     D.weight=wR.map(norm).filter(r=>r.date&&r.weight).map(r=>{
@@ -253,12 +292,19 @@ async function loadAll(){
       lifted:(r.lifted||r.lift||'').toLowerCase().startsWith('y'),
       sleep:parseFloat(r.sleep_hours||r.sleep||'')||0
     })).sort((a,b)=>a.date.localeCompare(b.date));
+    D.measurements=mR.map(norm).filter(r=>r.date).map(r=>({
+      date:r.date,
+      chest:parseFloat(r.chest||'')||0,
+      waist:parseFloat(r.waist||'')||0,
+      hips:parseFloat(r.hips||'')||0
+    })).sort((a,b)=>a.date.localeCompare(b.date));
     D.challenges=chR.map(norm).filter(r=>r.date&&r.name).map(r=>({
       date:r.date,name:r.name,
-      score:parseFloat(r.score_weight||r.score||'')||0,
+      weight:parseFloat(r.weight||'')||0,
+      time:r.time||'',
       notes:r.notes||''
     })).sort((a,b)=>a.date.localeCompare(b.date));
-    ss('Updated '+new Date().toLocaleTimeString()+' · '+D.weight.length+' weight, '+D.calories.length+' cal, '+D.activity.length+' activity, '+D.challenges.length+' challenge entries');
+    ss('Updated '+new Date().toLocaleTimeString()+' · '+D.weight.length+' weight, '+D.calories.length+' cal, '+D.activity.length+' activity, '+D.measurements.length+' measurements, '+D.challenges.length+' challenge entries');
     renderAll();
   }catch(e){
     ss('Error: '+e.message);
@@ -275,7 +321,7 @@ function dc(id){if(CH[id]){CH[id].destroy();delete CH[id];}}
 function mk(id,cfg){dc(id);const c=document.getElementById(id);if(c)CH[id]=new Chart(c,cfg);}
 function bO(ex){return Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45,autoSkip:true,maxTicksLimit:8}},y:{grid:{color:GC},ticks:{color:TC,font:{size:11}}}}},ex||{});}
 
-function renderAll(){renderOverview();renderWeight();renderCalories();renderActivity();renderChallenges();}
+function renderAll(){renderOverview();renderWeight();renderCalories();renderActivity();renderMeasurements();renderChallenges();}
 
 function renderOverview(){
   const days=Math.max(0,Math.ceil((GD-new Date())/864e5));
@@ -352,20 +398,63 @@ function renderActivity(){
   document.getElementById('a-tbl').innerHTML=D.activity.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+(r.ruck>0?r.ruck+' mi':'—')+'</td><td><span class="badge '+(r.lifted?'bs':'bw')+'">'+(r.lifted?'Yes':'No')+'</span></td><td>'+(r.sleep>0?r.sleep+' hrs':'—')+'</td></tr>').join('');
 }
 
+function renderMeasurements(){
+  if(!D.measurements.length){document.getElementById('ms-tbl').innerHTML='<tr><td colspan="4" class="empty">No measurement data yet.</td></tr>';return;}
+  const lat=D.measurements[D.measurements.length-1];
+  const first=D.measurements[0];
+  function delta(cur,start){const d=+(cur-start).toFixed(1);return d===0?'No change':(d>0?'+':'')+d+' in from start';}
+  document.getElementById('ms-chest').textContent=lat.chest?lat.chest+' in':'—';
+  document.getElementById('ms-chestd').textContent=lat.chest?delta(lat.chest,first.chest):'';
+  document.getElementById('ms-waist').textContent=lat.waist?lat.waist+' in':'—';
+  document.getElementById('ms-waistd').textContent=lat.waist?delta(lat.waist,first.waist):'';
+  document.getElementById('ms-hips').textContent=lat.hips?lat.hips+' in':'—';
+  document.getElementById('ms-hipsd').textContent=lat.hips?delta(lat.hips,first.hips):'';
+  const labels=D.measurements.map(r=>r.date.slice(5));
+  mk('ms-chart',{type:'line',data:{labels:labels,datasets:[
+    {label:'Chest',data:D.measurements.map(r=>r.chest||null),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.07)',pointRadius:4,tension:0.3,fill:false,spanGaps:true},
+    {label:'Waist',data:D.measurements.map(r=>r.waist||null),borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,0.07)',pointRadius:4,tension:0.3,fill:false,spanGaps:true},
+    {label:'Hips',data:D.measurements.map(r=>r.hips||null),borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,0.07)',pointRadius:4,tension:0.3,fill:false,spanGaps:true}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC,font:{size:11},boxWidth:10}}},scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{title:{display:true,text:'inches',color:TC},grid:{color:GC},ticks:{color:TC,font:{size:11}}}}}});
+  document.getElementById('ms-tbl').innerHTML=D.measurements.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+(r.chest?r.chest+' in':'—')+'</td><td>'+(r.waist?r.waist+' in':'—')+'</td><td>'+(r.hips?r.hips+' in':'—')+'</td></tr>').join('');
+}
+
 function renderChallenges(){
   document.getElementById('ch-tot').textContent=D.challenges.length||'—';
-  if(!D.challenges.length){document.getElementById('ch-tbl').innerHTML='<tr><td colspan="4" class="empty">No challenge data yet.</td></tr>';return;}
-  const lat=D.challenges[D.challenges.length-1];
-  document.getElementById('ch-lat').textContent=lat.score||'—';
-  document.getElementById('ch-lats').textContent=lat.name;
-  const bn={};D.challenges.forEach(r=>{if(!bn[r.name])bn[r.name]=[];bn[r.name].push(r);});
-  let best='—';Object.values(bn).forEach(arr=>{if(arr.length>=2){const imp=arr[arr.length-1].score-arr[0].score;if(best==='—'||Math.abs(imp)>Math.abs(parseFloat(best)))best=(imp>=0?'+':'')+imp.toFixed(1);}});
-  document.getElementById('ch-best').textContent=best;
+  const wc=D.challenges.filter(r=>r.weight>0);
+  const tc=D.challenges.filter(r=>r.time);
+  document.getElementById('ch-wcnt').textContent=wc.length||'—';
+  document.getElementById('ch-tcnt').textContent=tc.length||'—';
+  if(!D.challenges.length){document.getElementById('ch-wtbl').innerHTML='<tr><td colspan="4" class="empty">No challenge data yet.</td></tr>';document.getElementById('ch-ttbl').innerHTML='<tr><td colspan="4" class="empty">No challenge data yet.</td></tr>';return;}
   const cols=['#1D9E75','#378ADD','#D85A30','#534AB7','#BA7517'];
-  const names=Object.keys(bn);
-  const allDates=[...new Set(D.challenges.map(r=>r.date.slice(5)))].sort();
-  mk('ch-chart',{type:'scatter',data:{datasets:names.map((n,i)=>({label:n,data:bn[n].map(r=>({x:r.date.slice(5),y:r.score})),borderColor:cols[i%5],backgroundColor:cols[i%5],pointRadius:5,showLine:true,tension:0.3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC,font:{size:11},boxWidth:10}}},scales:{x:{type:'category',labels:allDates,grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{grid:{color:GC},ticks:{color:TC,font:{size:11}}}}}});
-  document.getElementById('ch-tbl').innerHTML=D.challenges.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+r.name+'</td><td>'+(r.score||'—')+'</td><td style="color:var(--text2)">'+(r.notes||'—')+'</td></tr>').join('');
+  // Weight section
+  if(wc.length){
+    const wlat=wc[wc.length-1];
+    document.getElementById('ch-wlat').textContent=wlat.weight+' lbs';
+    document.getElementById('ch-wlats').textContent=wlat.name;
+    const wbn={};wc.forEach(r=>{if(!wbn[r.name])wbn[r.name]=[];wbn[r.name].push(r);});
+    let wbest='—';Object.values(wbn).forEach(arr=>{if(arr.length>=2){const imp=arr[arr.length-1].weight-arr[0].weight;if(wbest==='—'||Math.abs(imp)>Math.abs(parseFloat(wbest)))wbest=(imp>=0?'+':'')+imp.toFixed(1)+' lbs';}});
+    document.getElementById('ch-wbest').textContent=wbest;
+    const wnames=Object.keys(wbn);
+    const wDates=[...new Set(wc.map(r=>r.date.slice(5)))].sort();
+    mk('ch-wchart',{type:'scatter',data:{datasets:wnames.map((n,i)=>({label:n,data:wbn[n].map(r=>({x:r.date.slice(5),y:r.weight})),borderColor:cols[i%5],backgroundColor:cols[i%5],pointRadius:5,showLine:true,tension:0.3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC,font:{size:11},boxWidth:10}}},scales:{x:{type:'category',labels:wDates,grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{title:{display:true,text:'lbs',color:TC},grid:{color:GC},ticks:{color:TC,font:{size:11}}}}}});
+  }
+  document.getElementById('ch-wtbl').innerHTML=wc.length?wc.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+r.name+'</td><td>'+r.weight+' lbs</td><td style="color:var(--text2)">'+(r.notes||'—')+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">No weight-based challenges yet.</td></tr>';
+  // Time section
+  if(tc.length){
+    const tlat=tc[tc.length-1];
+    document.getElementById('ch-tlat').textContent=tlat.time;
+    document.getElementById('ch-tlats').textContent=tlat.name;
+    const tbn={};tc.forEach(r=>{if(!tbn[r.name])tbn[r.name]=[];tbn[r.name].push(r);});
+    // Parse time string to seconds for charting
+    function tsec(t){const p=t.split(':').map(Number);return p.length===3?p[0]*3600+p[1]*60+p[2]:p.length===2?p[0]*60+p[1]:p[0]||0;}
+    function sfmt(s){const m=Math.floor(s/60),sec=Math.round(s%60);return m+':'+(sec<10?'0':'')+sec;}
+    let tbest='—';Object.values(tbn).forEach(arr=>{if(arr.length>=2){const imp=tsec(arr[arr.length-1].time)-tsec(arr[0].time);const label=imp<=0?'-'+sfmt(Math.abs(imp)):'+'+sfmt(imp);if(tbest==='—'||Math.abs(imp)>Math.abs(tsec(tbest.replace(/[+-]/,''))))tbest=label;}});
+    document.getElementById('ch-tbest').textContent=tbest;
+    const tnames=Object.keys(tbn);
+    const tDates=[...new Set(tc.map(r=>r.date.slice(5)))].sort();
+    mk('ch-tchart',{type:'scatter',data:{datasets:tnames.map((n,i)=>({label:n,data:tbn[n].map(r=>({x:r.date.slice(5),y:tsec(r.time)})),borderColor:cols[i%5],backgroundColor:cols[i%5],pointRadius:5,showLine:true,tension:0.3}))},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC,font:{size:11},boxWidth:10}},tooltip:{callbacks:{label:function(ctx){return ctx.dataset.label+': '+sfmt(ctx.parsed.y);}}}},scales:{x:{type:'category',labels:tDates,grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{title:{display:true,text:'Time',color:TC},grid:{color:GC},ticks:{color:TC,font:{size:11},callback:function(v){return sfmt(v);}}}}}});
+  }
+  document.getElementById('ch-ttbl').innerHTML=tc.length?tc.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+r.name+'</td><td>'+r.time+'</td><td style="color:var(--text2)">'+(r.notes||'—')+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">No time-based challenges yet.</td></tr>';
 }
 
 loadAll();
