@@ -252,6 +252,9 @@ function parseDate(v){
   // M/D/YYYY or MM/DD/YYYY
   const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if(m)return m[3]+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0');
+  // M-D or M/D (no year, assume current year)
+  const my=s.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
+  if(my)return new Date().getFullYear()+'-'+my[1].padStart(2,'0')+'-'+my[2].padStart(2,'0');
   // Try native parse as fallback
   const d=new Date(s);
   if(!isNaN(d))return d.toISOString().split('T')[0];
@@ -413,7 +416,7 @@ function renderMeasurements(){
   mk('ms-chart',{type:'line',data:{labels:labels,datasets:[
     {label:'Chest',data:D.measurements.map(r=>r.chest||null),borderColor:'#378ADD',backgroundColor:'rgba(55,138,221,0.07)',pointRadius:4,tension:0.3,fill:false,spanGaps:true},
     {label:'Waist',data:D.measurements.map(r=>r.waist||null),borderColor:'#D85A30',backgroundColor:'rgba(216,90,48,0.07)',pointRadius:4,tension:0.3,fill:false,spanGaps:true},
-    {label:'Hips',data:D.measurements.map(r=>r.hips||null),borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,0.07)',pointRadius:4,tension:0.3,fill:false,spanGaps:true}
+    {label:'Hips',data:D.measurements.map(r=>r.hips||null),borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,0.07)',pointRadius:5,tension:0.3,fill:false,spanGaps:true,borderDash:[6,3]}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:TC,font:{size:11},boxWidth:10}}},scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{title:{display:true,text:'inches',color:TC},grid:{color:GC},ticks:{color:TC,font:{size:11}}}}}});
   document.getElementById('ms-tbl').innerHTML=D.measurements.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+(r.chest?r.chest+' in':'—')+'</td><td>'+(r.waist?r.waist+' in':'—')+'</td><td>'+(r.hips?r.hips+' in':'—')+'</td></tr>').join('');
 }
