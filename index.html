@@ -317,10 +317,13 @@ async function loadAll(){
       const fl=parseFloat(r.body_fat_lbs||r.fat_lbs||r.body_fat||'')||null;
       return{date:r.date,w,fatLbs:fl,fatPct:fl&&w>0?+(fl/w*100).toFixed(1):null};
     }).sort((a,b)=>a.date.localeCompare(b.date));
-    D.fasting=wNorm.filter(r=>r.date&&r.start&&r.end).map(r=>({
-      date:r.date,start:r.start,end:r.end,
-      dur:calcFastDur(r.start,r.end)
-    })).sort((a,b)=>a.date.localeCompare(b.date));
+    D.fasting=[];
+    const wSorted=wNorm.filter(r=>r.date).sort((a,b)=>a.date.localeCompare(b.date));
+    for(let i=0;i<wSorted.length;i++){
+      const r=wSorted[i];
+      if(r.start&&r.end){D.fasting.push({date:r.date,start:r.start,end:r.end,dur:calcFastDur(r.start,r.end)});continue;}
+      if(r.start&&!r.end){for(let j=i+1;j<wSorted.length;j++){if(wSorted[j].end){D.fasting.push({date:wSorted[j].date,start:r.start,end:wSorted[j].end,dur:calcFastDur(r.start,wSorted[j].end)});break;}}}
+    }
     D.calories=cR.map(norm).filter(r=>r.date&&r.consumed&&r.burned).map(r=>({
       date:r.date,c:parseInt(r.consumed)||0,b:parseInt(r.burned)||0
     })).sort((a,b)=>a.date.localeCompare(b.date));
