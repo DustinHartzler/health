@@ -23,6 +23,8 @@ No build step, no backend — just a single `index.html` file.
 | Date | Entry date |
 | Weight | Weight in lbs |
 | Body Fat Lbs | Body fat in lbs |
+| Start | Fasting start time (e.g. 8:00 PM or 20:00) |
+| End | Fasting end time (e.g. 12:00 PM or 12:00) |
 
 ### Calories (gid: 1245612249)
 | Column | Description |
@@ -64,6 +66,10 @@ No build step, no backend — just a single `index.html` file.
 4. Open `index.html` in a browser or deploy to any static host
 
 ## Changelog
+
+### 2026-04-06
+- Added fasting tracking to Weight & Body Fat tab (duration bar chart, 16hr target line, streak, avg duration, log table)
+- Fasting data read from Start/End columns in the existing Weight sheet — no separate tab needed
 
 ### 2026-04-05
 - Added Measurements tab with chest, waist, and hips tracking (trend chart, delta metrics, log table)

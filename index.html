@@ -124,6 +124,22 @@ td{padding:8px;border-bottom:0.5px solid var(--border);overflow:hidden;text-over
     <div class="ct">Log</div>
     <div class="tw"><table><thead><tr><th style="width:18%">Date</th><th style="width:16%">Weight</th><th style="width:16%">Change</th><th style="width:16%">Fat lbs</th><th style="width:12%">Fat %</th><th style="width:22%">Status</th></tr></thead><tbody id="w-tbl"></tbody></table></div>
   </div>
+
+  <h3 style="margin:1.5rem 0 0.5rem;color:var(--text1);font-size:1rem">Fasting</h3>
+  <div class="g3">
+    <div class="m"><div class="ml">Latest fast</div><div class="mv" id="f-lat">—</div><div class="ms" id="f-lats"></div></div>
+    <div class="m"><div class="ml">Avg duration</div><div class="mv" id="f-avg">—</div><div class="ms">hours</div></div>
+    <div class="m"><div class="ml">Current streak</div><div class="mv" id="f-str">—</div><div class="ms">consecutive days</div></div>
+  </div>
+  <div class="card">
+    <div class="ct">Fasting duration over time</div>
+    <div class="leg"><span class="li"><span class="ld" style="background:var(--amber)"></span>Duration (hrs)</span><span class="li"><span class="ld" style="background:rgba(99,153,34,0.4);border:1px dashed rgba(99,153,34,0.6)"></span>16hr target</span></div>
+    <div class="pw" style="height:220px"><canvas id="f-chart"></canvas></div>
+  </div>
+  <div class="card">
+    <div class="ct">Fasting log</div>
+    <div class="tw"><table><thead><tr><th style="width:25%">Date</th><th style="width:20%">Start</th><th style="width:20%">End</th><th style="width:20%">Duration</th><th style="width:15%">Status</th></tr></thead><tbody id="f-tbl"></tbody></table></div>
+  </div>
 </div>
 
 <div id="calories" class="pg">
@@ -230,7 +246,7 @@ const URLS = {
 };
 const SW=220,GW=205,SFL=30;
 const GD=new Date('2025-06-09');
-let D={weight:[],calories:[],activity:[],measurements:[],challenges:[]};
+let D={weight:[],calories:[],activity:[],measurements:[],fasting:[],challenges:[]};
 let CH={};
 const DARK=matchMedia('(prefers-color-scheme:dark)').matches;
 const TC=DARK?'#a8a8a2':'#888780';
@@ -261,6 +277,20 @@ function parseDate(v){
   return s;
 }
 
+function parseTime(t){
+  t=t.trim().toUpperCase();
+  const ap=t.match(/(AM|PM)$/);
+  const nums=t.replace(/(AM|PM)/i,'').trim().split(':').map(Number);
+  let h=nums[0],m=nums[1]||0;
+  if(ap){if(ap[1]==='PM'&&h!==12)h+=12;if(ap[1]==='AM'&&h===12)h=0;}
+  return h*60+m;
+}
+function calcFastDur(start,end){
+  let s=parseTime(start),e=parseTime(end);
+  if(e<=s)e+=1440;
+  return+((e-s)/60).toFixed(1);
+}
+
 function norm(row){
   const o={};
   for(const k in row){
@@ -281,11 +311,16 @@ async function loadAll(){
       fetchCSV(URLS.measurements),
       fetchCSV(URLS.challenges)
     ]);
-    D.weight=wR.map(norm).filter(r=>r.date&&r.weight).map(r=>{
+    const wNorm=wR.map(norm);
+    D.weight=wNorm.filter(r=>r.date&&r.weight).map(r=>{
       const w=parseFloat(r.weight)||0;
       const fl=parseFloat(r.body_fat_lbs||r.fat_lbs||r.body_fat||'')||null;
       return{date:r.date,w,fatLbs:fl,fatPct:fl&&w>0?+(fl/w*100).toFixed(1):null};
     }).sort((a,b)=>a.date.localeCompare(b.date));
+    D.fasting=wNorm.filter(r=>r.date&&r.start&&r.end).map(r=>({
+      date:r.date,start:r.start,end:r.end,
+      dur:calcFastDur(r.start,r.end)
+    })).sort((a,b)=>a.date.localeCompare(b.date));
     D.calories=cR.map(norm).filter(r=>r.date&&r.consumed&&r.burned).map(r=>({
       date:r.date,c:parseInt(r.consumed)||0,b:parseInt(r.burned)||0
     })).sort((a,b)=>a.date.localeCompare(b.date));
@@ -307,7 +342,7 @@ async function loadAll(){
       time:r.time||'',
       notes:r.notes||''
     })).sort((a,b)=>a.date.localeCompare(b.date));
-    ss('Updated '+new Date().toLocaleTimeString()+' · '+D.weight.length+' weight, '+D.calories.length+' cal, '+D.activity.length+' activity, '+D.measurements.length+' measurements, '+D.challenges.length+' challenge entries');
+    ss('Updated '+new Date().toLocaleTimeString()+' · '+D.weight.length+' weight, '+D.calories.length+' cal, '+D.activity.length+' activity, '+D.measurements.length+' measurements, '+D.fasting.length+' fasting, '+D.challenges.length+' challenge entries');
     renderAll();
   }catch(e){
     ss('Error: '+e.message);
@@ -324,7 +359,7 @@ function dc(id){if(CH[id]){CH[id].destroy();delete CH[id];}}
 function mk(id,cfg){dc(id);const c=document.getElementById(id);if(c)CH[id]=new Chart(c,cfg);}
 function bO(ex){return Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45,autoSkip:true,maxTicksLimit:8}},y:{grid:{color:GC},ticks:{color:TC,font:{size:11}}}}},ex||{});}
 
-function renderAll(){renderOverview();renderWeight();renderCalories();renderActivity();renderMeasurements();renderChallenges();}
+function renderAll(){renderOverview();renderWeight();renderFasting();renderCalories();renderActivity();renderMeasurements();renderChallenges();}
 
 function renderOverview(){
   const days=Math.max(0,Math.ceil((GD-new Date())/864e5));
@@ -374,6 +409,21 @@ function renderWeight(){
     const p=arr[i+1],d=p?+(r.w-p.w).toFixed(1):null;
     return '<tr><td>'+r.date+'</td><td>'+r.w+' lbs</td><td><span class="badge '+(d===null?'':d<0?'bs':d>0?'bd':'bw')+'">'+(d===null?'—':(d>0?'+':'')+d+' lbs')+'</span></td><td>'+(r.fatLbs!==null?r.fatLbs+' lbs':'—')+'</td><td>'+(r.fatPct!==null?r.fatPct+'%':'—')+'</td><td><span class="badge '+(r.w<SW?'bs':'bw')+'">'+(r.w<SW?'losing':'monitor')+'</span></td></tr>';
   }).join('');
+}
+
+function renderFasting(){
+  if(!D.fasting.length){document.getElementById('f-tbl').innerHTML='<tr><td colspan="5" class="empty">No fasting data yet.</td></tr>';return;}
+  const lat=D.fasting[D.fasting.length-1];
+  document.getElementById('f-lat').textContent=lat.dur+' hrs';
+  document.getElementById('f-lats').textContent=lat.start+' → '+lat.end;
+  const avg=(D.fasting.reduce((s,r)=>s+r.dur,0)/D.fasting.length).toFixed(1);
+  document.getElementById('f-avg').textContent=avg;
+  let streak=0;const fastDates=new Set(D.fasting.map(r=>r.date));
+  let cd=new Date(lat.date);
+  while(fastDates.has(cd.toISOString().split('T')[0])){streak++;cd.setDate(cd.getDate()-1);}
+  document.getElementById('f-str').textContent=streak;
+  mk('f-chart',{type:'bar',data:{labels:D.fasting.map(r=>r.date.slice(5)),datasets:[{data:D.fasting.map(r=>r.dur),backgroundColor:'rgba(186,117,23,0.75)',borderRadius:3},{data:D.fasting.map(()=>16),type:'line',borderColor:'rgba(99,153,34,0.4)',borderDash:[3,3],pointRadius:0,fill:false}]},options:bO({scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{grid:{color:GC},min:0,ticks:{color:TC,font:{size:11},callback:v=>v+'h'}}}})});
+  document.getElementById('f-tbl').innerHTML=D.fasting.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+r.start+'</td><td>'+r.end+'</td><td>'+r.dur+' hrs</td><td><span class="badge '+(r.dur>=16?'bs':r.dur>=12?'bw':'bd')+'">'+(r.dur>=16?'16+ goal':r.dur>=12?'12+ ok':'short')+'</span></td></tr>').join('');
 }
 
 function renderCalories(){
