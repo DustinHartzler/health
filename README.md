@@ -67,6 +67,10 @@ No build step, no backend — just a single `index.html` file.
 
 ## Changelog
 
+### 2026-04-09
+- Fixed multi-day fast support — Start and End on different rows are now correctly paired across any number of days
+- Fixed goal deadline year from 2025 to 2026
+
 ### 2026-04-06
 - Added fasting tracking to Weight & Body Fat tab (duration bar chart, 16hr target line, streak, avg duration, log table)
 - Fasting data read from Start/End columns in the existing Weight sheet — no separate tab needed
