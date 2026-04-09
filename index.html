@@ -525,7 +525,5 @@ function renderChallenges(){
   document.getElementById('ch-ttbl').innerHTML=tc.length?tc.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+r.name+'</td><td>'+r.time+'</td><td style="color:var(--text2)">'+(r.notes||'—')+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">No time-based challenges yet.</td></tr>';
 }
 
-if(typeof Papa==='undefined'||typeof Chart==='undefined'){
-  ss('Error: '+(typeof Papa==='undefined'?'PapaParse':'Chart.js')+' failed to load');
-}else{loadAll();}
+loadAll();
 </script>
