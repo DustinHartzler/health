@@ -285,9 +285,15 @@ function parseTime(t){
   if(ap){if(ap[1]==='PM'&&h!==12)h+=12;if(ap[1]==='AM'&&h===12)h=0;}
   return h*60+m;
 }
-function calcFastDur(start,end){
+function calcFastDur(start,end,startDate,endDate){
   let s=parseTime(start),e=parseTime(end);
-  if(e<=s)e+=1440;
+  if(startDate&&endDate){
+    const dayMs=864e5;
+    const days=Math.round((new Date(endDate)-new Date(startDate))/dayMs);
+    e+=days*1440;
+  }else{
+    if(e<=s)e+=1440;
+  }
   return+((e-s)/60).toFixed(1);
 }
 
@@ -322,7 +328,7 @@ async function loadAll(){
     for(let i=0;i<wSorted.length;i++){
       const r=wSorted[i];
       if(r.start&&r.end){D.fasting.push({date:r.date,start:r.start,end:r.end,dur:calcFastDur(r.start,r.end)});continue;}
-      if(r.start&&!r.end){for(let j=i+1;j<wSorted.length;j++){if(wSorted[j].end){D.fasting.push({date:wSorted[j].date,start:r.start,end:wSorted[j].end,dur:calcFastDur(r.start,wSorted[j].end)});break;}}}
+      if(r.start&&!r.end){for(let j=i+1;j<wSorted.length;j++){if(wSorted[j].end){D.fasting.push({date:wSorted[j].date,start:r.start,end:wSorted[j].end,dur:calcFastDur(r.start,wSorted[j].end,r.date,wSorted[j].date)});break;}}}
     }
     D.calories=cR.map(norm).filter(r=>r.date&&r.consumed&&r.burned).map(r=>({
       date:r.date,c:parseInt(r.consumed)||0,b:parseInt(r.burned)||0
