@@ -270,6 +270,9 @@ function parseDate(v){
   // M/D/YYYY or MM/DD/YYYY
   const m=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
   if(m)return m[3]+'-'+m[1].padStart(2,'0')+'-'+m[2].padStart(2,'0');
+  // M/D/YY or MM/DD/YY (2-digit year, assume 2000s)
+  const m2=s.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+  if(m2)return'20'+m2[3]+'-'+m2[1].padStart(2,'0')+'-'+m2[2].padStart(2,'0');
   // M-D or M/D (no year, assume current year)
   const my=s.match(/^(\d{1,2})[\/\-](\d{1,2})$/);
   if(my)return new Date().getFullYear()+'-'+my[1].padStart(2,'0')+'-'+my[2].padStart(2,'0');
