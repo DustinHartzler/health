@@ -255,9 +255,11 @@ const GC=DARK?'rgba(255,255,255,0.06)':'rgba(0,0,0,0.05)';
 function ss(m){document.getElementById('sbar').textContent=m;}
 
 async function fetchCSV(url){
-  const r=await fetch(url);
-  if(!r.ok)throw new Error('HTTP '+r.status);
-  return Papa.parse(await r.text(),{header:true,skipEmptyLines:true}).data;
+  const r=await fetch(url,{redirect:'follow',mode:'cors'});
+  if(!r.ok)throw new Error('HTTP '+r.status+' for '+url.slice(-20));
+  const t=await r.text();
+  if(!t.trim())throw new Error('Empty response from '+url.slice(-20));
+  return Papa.parse(t,{header:true,skipEmptyLines:true}).data;
 }
 
 function parseDate(v){
@@ -520,5 +522,7 @@ function renderChallenges(){
   document.getElementById('ch-ttbl').innerHTML=tc.length?tc.slice().reverse().map(r=>'<tr><td>'+r.date+'</td><td>'+r.name+'</td><td>'+r.time+'</td><td style="color:var(--text2)">'+(r.notes||'—')+'</td></tr>').join(''):'<tr><td colspan="4" class="empty">No time-based challenges yet.</td></tr>';
 }
 
-loadAll();
+if(typeof Papa==='undefined'||typeof Chart==='undefined'){
+  ss('Error: '+(typeof Papa==='undefined'?'PapaParse':'Chart.js')+' failed to load');
+}else{loadAll();}
 </script>
