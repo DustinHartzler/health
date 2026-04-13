@@ -65,9 +65,36 @@ No build step, no backend — just a single `index.html` file.
 3. Update the `gid` values in `index.html` to match your sheet's tab IDs
 4. Open `index.html` in a browser or deploy to any static host
 
+### Data entry from the web (optional)
+
+To add data directly from the dashboard (e.g. measurements from your phone), set up a Google Apps Script:
+
+1. In your Google Sheet, go to **Extensions > Apps Script**
+2. Replace the default code with:
+
+```javascript
+function doPost(e) {
+  var data = JSON.parse(e.postData.contents);
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(data.tab);
+  if (!sheet) return ContentService.createTextOutput(JSON.stringify({error: 'Tab not found'})).setMimeType(ContentService.MimeType.JSON);
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function(h) { return h.toString().trim(); });
+  var row = headers.map(function(h) { return data[h.toLowerCase()] || ''; });
+  sheet.appendRow(row);
+  return ContentService.createTextOutput(JSON.stringify({status: 'ok'})).setMimeType(ContentService.MimeType.JSON);
+}
+```
+
+3. Click **Deploy > New deployment**
+4. Set type to **Web app**, execute as **Me**, access to **Anyone**
+5. Copy the deployment URL and paste it as the `SUBMIT_URL` value in `index.html`
+
+The script is generic — it routes data to any tab by name and maps fields to column headers automatically, so it works for any future input forms without changes.
+
 ## Changelog
 
 ### 2026-04-13
+- Added web-based measurement input form (chest, waist, hips) with optimistic local update
+- Added reusable `submitToSheet` infrastructure for future input forms (uses Google Apps Script as write API)
 - Fixed deficit calculation sign — deficit now shows as negative (consumed minus burned) instead of positive
 
 ### 2026-04-09

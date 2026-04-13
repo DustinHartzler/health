@@ -51,6 +51,10 @@ td{padding:8px;border-bottom:0.5px solid var(--border);overflow:hidden;text-over
 .bw{background:#FAEEDA;color:#633806}
 .bd{background:#FCEBEB;color:#791F1F}
 .empty{text-align:center;padding:2.5rem;color:var(--text2);font-size:13px}
+.inp{width:100%;padding:8px;border-radius:var(--r);border:0.5px solid var(--border2);background:var(--bg);color:var(--text);font-size:15px;font-family:inherit}
+.inp:focus{outline:2px solid var(--teal);outline-offset:-1px}
+.inp-lbl{font-size:11px;color:var(--text2);display:block;margin-bottom:3px}
+.inp-status{font-size:12px;color:var(--text2);margin-top:6px;text-align:center}
 @media(prefers-color-scheme:dark){.bs{background:#04342C;color:#9FE1CB}.bw{background:#412402;color:#FAC775}.bd{background:#501313;color:#F7C1C1}}
 </style>
 </head>
@@ -183,6 +187,16 @@ td{padding:8px;border-bottom:0.5px solid var(--border);overflow:hidden;text-over
 </div>
 
 <div id="measurements" class="pg">
+  <div class="card">
+    <div class="ct">Add measurement</div>
+    <div class="g3" style="margin-bottom:10px">
+      <div><label class="inp-lbl" for="in-chest">Chest (in)</label><input type="number" id="in-chest" step="0.1" inputmode="decimal" class="inp"></div>
+      <div><label class="inp-lbl" for="in-waist">Waist (in)</label><input type="number" id="in-waist" step="0.1" inputmode="decimal" class="inp"></div>
+      <div><label class="inp-lbl" for="in-hips">Hips (in)</label><input type="number" id="in-hips" step="0.1" inputmode="decimal" class="inp"></div>
+    </div>
+    <button class="rbtn" id="in-ms-btn" onclick="submitMeasurement()" style="width:100%;padding:10px;font-size:14px">Save measurement</button>
+    <div class="inp-status" id="in-ms-status"></div>
+  </div>
   <div class="g3">
     <div class="m"><div class="ml">Chest</div><div class="mv" id="ms-chest">—</div><div class="ms" id="ms-chestd"></div></div>
     <div class="m"><div class="ml">Waist</div><div class="mv" id="ms-waist">—</div><div class="ms" id="ms-waistd"></div></div>
@@ -237,6 +251,7 @@ td{padding:8px;border-bottom:0.5px solid var(--border);overflow:hidden;text-over
 </div>
 
 <script>
+const SUBMIT_URL = ''; // Google Apps Script web app URL — see README for setup
 const BASE = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ4OBIzr9vein6grKIX5bvpbrhJ8wxdfvi-YGs1KrYOS-SUOcpZzdnp2WG-qYOMhXuNSSbM2U0WTzFh/pub?single=true&output=csv&gid=';
 const URLS = {
   weight:     BASE + '0',
@@ -311,6 +326,41 @@ function norm(row){
   }
   if(o.date)o.date=parseDate(o.date);
   return o;
+}
+
+async function submitToSheet(tab, data, btn, statusEl) {
+  if (!SUBMIT_URL) { statusEl.style.color='var(--coral)'; statusEl.textContent='Set SUBMIT_URL first (see README).'; return false; }
+  btn.disabled = true; btn.textContent = 'Saving...'; statusEl.textContent = '';
+  try {
+    await fetch(SUBMIT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({tab, ...data}) });
+    statusEl.style.color = 'var(--teal)'; statusEl.textContent = 'Saved! Data may take a few minutes to sync.';
+    return true;
+  } catch(e) {
+    statusEl.style.color = 'var(--coral)'; statusEl.textContent = 'Error: ' + e.message;
+    return false;
+  } finally { btn.disabled = false; btn.textContent = btn.dataset.label; }
+}
+
+async function submitMeasurement() {
+  const chest = document.getElementById('in-chest').value;
+  const waist = document.getElementById('in-waist').value;
+  const hips = document.getElementById('in-hips').value;
+  const btn = document.getElementById('in-ms-btn');
+  const status = document.getElementById('in-ms-status');
+  if (!chest && !waist && !hips) { status.textContent = 'Enter at least one measurement.'; return; }
+  btn.dataset.label = btn.dataset.label || btn.textContent;
+  const today = new Date();
+  const dateStr = (today.getMonth()+1) + '/' + today.getDate() + '/' + today.getFullYear();
+  const ok = await submitToSheet('Measurements', { date:dateStr, chest:chest||'', waist:waist||'', hips:hips||'' }, btn, status);
+  if (ok) {
+    const isoDate = today.toISOString().split('T')[0];
+    D.measurements.push({ date:isoDate, chest:parseFloat(chest)||0, waist:parseFloat(waist)||0, hips:parseFloat(hips)||0 });
+    D.measurements.sort((a,b) => a.date.localeCompare(b.date));
+    renderMeasurements();
+    document.getElementById('in-chest').value = '';
+    document.getElementById('in-waist').value = '';
+    document.getElementById('in-hips').value = '';
+  }
 }
 
 async function loadAll(){
