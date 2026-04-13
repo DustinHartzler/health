@@ -360,7 +360,7 @@ async function submitMeasurement() {
   if (!chest && !waist && !hips) { status.textContent = 'Enter at least one measurement.'; return; }
   btn.dataset.label = btn.dataset.label || btn.textContent;
   const today = new Date();
-  const dateStr = (today.getMonth()+1) + '/' + today.getDate() + '/' + today.getFullYear();
+  const dateStr = today.getFullYear() + '-' + String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
   const ok = await submitToSheet('Measurements', { date:dateStr, chest:chest||'', waist:waist||'', hips:hips||'' }, btn, status);
   if (ok) {
     const isoDate = today.toISOString().split('T')[0];
