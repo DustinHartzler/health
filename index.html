@@ -405,7 +405,7 @@ function renderOverview(){
     const bf14=D.weight.filter(r=>r.fatPct!==null).slice(-14);
     if(bf14.length>1)mk('ov-bfc',{type:'line',data:{labels:bf14.map(r=>r.date.slice(5)),datasets:[{data:bf14.map(r=>r.fatPct),borderColor:'#534AB7',backgroundColor:'rgba(83,74,183,0.1)',pointRadius:2,tension:0.3,fill:true}]},options:bO({scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:10},maxRotation:0,maxTicksLimit:5}},y:{grid:{color:GC},ticks:{color:TC,font:{size:10},callback:v=>v+'%'}}}})});
   }
-  if(D.calories.length){const avg=Math.round(D.calories.reduce((s,r)=>s+(r.b-r.c),0)/D.calories.length);document.getElementById('ov-def').textContent=(avg>=0?'+':'')+avg;}
+  if(D.calories.length){const avg=Math.round(D.calories.reduce((s,r)=>s+(r.c-r.b),0)/D.calories.length);document.getElementById('ov-def').textContent=(avg>=0?'+':'')+avg;}
   if(D.activity.length){document.getElementById('ov-ru').textContent=D.activity.reduce((s,r)=>s+r.ruck,0).toFixed(1);const li=D.activity.filter(r=>r.lifted).length;document.getElementById('ov-li').textContent=li;document.getElementById('ov-lis').textContent='of '+D.activity.length+' days';}
 }
 
@@ -448,9 +448,9 @@ function renderCalories(){
   const ao=Math.round(D.calories.reduce((s,r)=>s+r.b,0)/D.calories.length);
   document.getElementById('c-in').textContent=ai.toLocaleString();
   document.getElementById('c-out').textContent=ao.toLocaleString();
-  document.getElementById('c-def').textContent=(ao-ai>=0?'+':'')+(ao-ai);
+  document.getElementById('c-def').textContent=(ai-ao>=0?'+':'')+(ai-ao);
   mk('c-chart',{type:'bar',data:{labels:D.calories.map(r=>r.date.slice(5)),datasets:[{label:'Consumed',data:D.calories.map(r=>r.c),backgroundColor:'rgba(55,138,221,0.75)',borderRadius:3},{label:'Burned',data:D.calories.map(r=>r.b),backgroundColor:'rgba(29,158,117,0.75)',borderRadius:3}]},options:bO({scales:{x:{grid:{color:GC},ticks:{color:TC,font:{size:11},maxRotation:45}},y:{grid:{color:GC},ticks:{color:TC,font:{size:11},callback:v=>v>=1000?(v/1000).toFixed(1)+'k':v}}}})});
-  document.getElementById('c-tbl').innerHTML=D.calories.slice().reverse().map(r=>{const d=r.b-r.c;return '<tr><td>'+r.date+'</td><td>'+r.c.toLocaleString()+'</td><td>'+r.b.toLocaleString()+'</td><td><span class="badge '+(d>=400?'bs':d>=0?'bw':'bd')+'">'+(d>=0?'+':'')+d+'</span></td></tr>';}).join('');
+  document.getElementById('c-tbl').innerHTML=D.calories.slice().reverse().map(r=>{const d=r.c-r.b;return '<tr><td>'+r.date+'</td><td>'+r.c.toLocaleString()+'</td><td>'+r.b.toLocaleString()+'</td><td><span class="badge '+(d<=-400?'bs':d<=0?'bw':'bd')+'">'+(d>=0?'+':'')+d+'</span></td></tr>';}).join('');
 }
 
 function renderActivity(){
