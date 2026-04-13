@@ -332,7 +332,8 @@ async function submitToSheet(tab, data, btn, statusEl) {
   if (!SUBMIT_URL) { statusEl.style.color='var(--coral)'; statusEl.textContent='Set SUBMIT_URL first (see README).'; return false; }
   btn.disabled = true; btn.textContent = 'Saving...'; statusEl.textContent = '';
   try {
-    await fetch(SUBMIT_URL, { method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain'}, body:JSON.stringify({tab, ...data}) });
+    const params = new URLSearchParams({tab, ...data}).toString();
+    await fetch(SUBMIT_URL + '?' + params, { mode:'no-cors' });
     statusEl.style.color = 'var(--teal)'; statusEl.textContent = 'Saved! Data may take a few minutes to sync.';
     return true;
   } catch(e) {

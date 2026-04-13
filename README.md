@@ -73,12 +73,12 @@ To add data directly from the dashboard (e.g. measurements from your phone), set
 2. Replace the default code with:
 
 ```javascript
-function doPost(e) {
-  var data = JSON.parse(e.postData.contents);
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(data.tab);
+function doGet(e) {
+  var tab = e.parameter.tab;
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(tab);
   if (!sheet) return ContentService.createTextOutput(JSON.stringify({error: 'Tab not found'})).setMimeType(ContentService.MimeType.JSON);
   var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(function(h) { return h.toString().trim(); });
-  var row = headers.map(function(h) { return data[h.toLowerCase()] || ''; });
+  var row = headers.map(function(h) { return e.parameter[h.toLowerCase()] || ''; });
   sheet.appendRow(row);
   return ContentService.createTextOutput(JSON.stringify({status: 'ok'})).setMimeType(ContentService.MimeType.JSON);
 }
