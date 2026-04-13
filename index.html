@@ -249,6 +249,7 @@ td{padding:8px;border-bottom:0.5px solid var(--border);overflow:hidden;text-over
 </div>
 
 </div>
+<iframe name="submit-frame" style="display:none"></iframe>
 
 <script>
 const SUBMIT_URL = 'https://script.google.com/macros/s/AKfycbxwH3QaqevedejXo8OndrIOoky7EmnQ3Fv1snSpiCbKgCf2a1FdO7dUtMHqCnPjpyv1/exec';
@@ -332,8 +333,16 @@ async function submitToSheet(tab, data, btn, statusEl) {
   if (!SUBMIT_URL) { statusEl.style.color='var(--coral)'; statusEl.textContent='Set SUBMIT_URL first (see README).'; return false; }
   btn.disabled = true; btn.textContent = 'Saving...'; statusEl.textContent = '';
   try {
-    const params = new URLSearchParams({tab, ...data}).toString();
-    await fetch(SUBMIT_URL + '?' + params, { mode:'no-cors' });
+    const form = document.createElement('form');
+    form.method = 'GET'; form.action = SUBMIT_URL; form.target = 'submit-frame';
+    Object.entries({tab, ...data}).forEach(([k,v]) => {
+      const inp = document.createElement('input');
+      inp.type = 'hidden'; inp.name = k; inp.value = v;
+      form.appendChild(inp);
+    });
+    document.body.appendChild(form);
+    form.submit();
+    form.remove();
     statusEl.style.color = 'var(--teal)'; statusEl.textContent = 'Saved! Data may take a few minutes to sync.';
     return true;
   } catch(e) {
