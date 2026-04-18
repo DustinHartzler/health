@@ -1150,7 +1150,7 @@ async function loadAll(){
 
     D.activity = aR.map(norm).filter(r=>r.date).map(r=>({
       date:r.date,
-      ruck:parseFloat(r.rucking_distance_miles||r.rucking||'')||0,
+      ruck:parseFloat(r.rucking_distance_miles||r.rucking_distance||r.rucking||'')||0,
       lifted:(r.lifted||r.lift||'').toLowerCase().startsWith('y'),
       sleep:parseFloat(r.sleep_hours||r.sleep||'')||0
     })).sort((a,b)=>a.date.localeCompare(b.date));
