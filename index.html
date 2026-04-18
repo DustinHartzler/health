@@ -136,7 +136,7 @@ body{min-height:100vh}
 .grid-3{display:grid;grid-template-columns:repeat(3, 1fr);gap:var(--gap);margin-bottom:var(--gap)}
 .grid-4{display:grid;grid-template-columns:repeat(4, 1fr);gap:var(--gap);margin-bottom:var(--gap)}
 @media(max-width:860px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr 1fr}}
-@media(max-width:500px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+@media(max-width:500px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}.grid-3.compact{grid-template-columns:repeat(3,1fr)}}
 
 .card{background:var(--paper);border:1px solid var(--rule);border-radius:4px;padding:var(--pad)}
 .card-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px}
@@ -704,7 +704,7 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
     <div class="input-status" id="in-ms-status"></div>
   </div>
 
-  <div class="grid-3">
+  <div class="grid-3 compact">
     <div class="metric"><div class="metric-l">Chest</div><div class="metric-v" id="ms-chest">—</div><div class="metric-s" id="ms-chestd">—</div></div>
     <div class="metric"><div class="metric-l">Waist</div><div class="metric-v" id="ms-waist">—</div><div class="metric-s" id="ms-waistd">—</div></div>
     <div class="metric"><div class="metric-l">Hips</div><div class="metric-v" id="ms-hips">—</div><div class="metric-s" id="ms-hipsd">—</div></div>
