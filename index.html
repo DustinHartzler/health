@@ -77,7 +77,7 @@ body{min-height:100vh}
 .nav-b.active::after{content:"";position:absolute;left:14px;right:14px;bottom:-1px;height:1.5px;background:var(--accent)}
 .nav-n{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-right:6px;font-weight:400}
 .nav-b.active .nav-n{color:var(--accent)}
-@media(max-width:640px){.nav{gap:0;margin-bottom:32px}.nav-b{padding:10px 10px 12px;font-size:12px}.nav-n{display:none}}
+@media(max-width:640px){.nav{gap:0;margin-bottom:32px}.nav-b{padding:10px 10px 12px;font-size:12px}.nav-n{display:none}.nav-b.nav-ov{display:none}}
 
 /* ---------- pages ---------- */
 .pg{display:none}
@@ -300,7 +300,7 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
 
 <!-- MASTHEAD -->
 <header class="masthead">
-  <div class="brand">
+  <div class="brand" onclick="sp('overview')" style="cursor:pointer">
     <div class="brand-mark"></div>
     <div>
       <div class="brand-title">The <em>Work</em></div>
@@ -315,7 +315,7 @@ body::before{content:"";position:fixed;inset:0;background-image:url("data:image/
 
 <!-- NAV -->
 <nav class="nav">
-  <button class="nav-b active" onclick="sp('overview')"><span class="nav-n">01</span>Overview</button>
+  <button class="nav-b nav-ov active" onclick="sp('overview')"><span class="nav-n">01</span>Overview</button>
   <button class="nav-b" onclick="sp('weight')"><span class="nav-n">02</span>Weight &amp; Fat</button>
   <button class="nav-b" onclick="sp('calories')"><span class="nav-n">03</span>Fuel</button>
   <button class="nav-b" onclick="sp('activity')"><span class="nav-n">04</span>Training</button>
