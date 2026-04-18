@@ -1516,7 +1516,7 @@ function renderActivity(){
   document.getElementById('a-tbl').innerHTML = D.activity.slice().reverse().map(r=>`<tr>
     <td>${r.date}</td>
     <td>${r.ruck>0?r.ruck+' mi':'—'}</td>
-    <td><span class="tag ${r.lifted?'tag-accent':'tag-warn'}">${r.lifted?'yes':'rest'}</span></td>
+    <td><span class="tag ${r.lifted?'tag-good':'tag-warn'}">${r.lifted?'yes':'rest'}</span></td>
     <td>${r.sleep>0?r.sleep+'h':'—'}</td>
   </tr>`).join('');
 }
